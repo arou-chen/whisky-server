@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	proto2 "whisky-server/server/tcp/proto"
 )
 
 const (
@@ -14,6 +12,21 @@ const (
 	DataID  = 4
 	DataLen = 4
 )
+
+type Code struct {
+	Buffer 		[]byte
+	LeftBuffer	[]byte
+	MsgLen      int
+}
+
+//arou 后续buffer长度可能需改变？
+func NewCode() Code {
+	return Code{
+		Buffer:     make([]byte, 1024),
+		LeftBuffer: make([]byte, 1024),
+		MsgLen:		0,
+	}
+}
 
 //整形转换成字节
 func IntToBytes(n int) []byte {
@@ -47,7 +60,12 @@ func BytesToUInt(b []byte) uint {
 	return uint(x)
 }
 
-func Unpack(buffer []byte, readerChannel chan []byte) []byte {
+//arou 避免粘包？
+func (c Code) Unpack() UnPackData {
+	var data UnPackData
+	data.list = make([][]byte, 0)
+
+	buffer := append(c.LeftBuffer, c.Buffer[:c.MsgLen]...)
 	length := len(buffer)
 
 	var i int
@@ -60,21 +78,17 @@ func Unpack(buffer []byte, readerChannel chan []byte) []byte {
 			if length < i + HeadLen + DataLen + messageLen {
 				break
 			}
-			data := buffer[i+HeadLen+DataLen:i+HeadLen+DataLen+messageLen]
-			test := proto2.Test{}
-			projectId := BytesToUInt(data[:DataID])
-			data = data[DataID:]
-			proto.Unmarshal(data, &test)
-			fmt.Println(projectId)
-			fmt.Println(test.Text)
-			fmt.Println(test.No)
+			info := buffer[i+HeadLen+DataLen:i+HeadLen+DataLen+messageLen]
+			data.list = append(data.list, info)
 
 			i += HeadLen + DataLen + messageLen - 1
 		}
 	}
 
-	if i == length {
-		return make([]byte, 0)
+	c.LeftBuffer = make([]byte, 0)
+	if i != length {
+		c.LeftBuffer =  buffer[i:]
 	}
-	return buffer[i:]
+
+	return data
 }
