@@ -33,7 +33,7 @@ func ProtoTest(in *proto2.Test) (out proto2.Test, err error) {
 	return proto2.Test{}, nil
 }
 
-func (s Server) Server() error {
+func (s Server) Start() error {
 	l, err := net.Listen("tcp",":3207")
 	if err != nil {
 		return err
@@ -51,7 +51,6 @@ func (s Server) Server() error {
 
 		go s.handleConnection(conn)
 	}
-
 }
 
 func (s Server) Stop() error {

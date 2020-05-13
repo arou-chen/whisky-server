@@ -1,14 +1,12 @@
 package main
 
 import (
-	"time"
+	launcher "whisky-server/launcher"
 	"whisky-server/server/tcp"
 )
 
 func main() {
-	server := tcp.NewServer()
-	go server.Server()
-	for {
-		time.Sleep(1 * time.Minute)
-	}
+	launcher := launcher.NewLauncher()
+	launcher.AddBottle(tcp.NewServer())
+	launcher.Run()
 }

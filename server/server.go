@@ -1,6 +1,6 @@
 package server
 
 type Server interface {
-	Server() error
+	Start() error
 	Stop() error
 }
